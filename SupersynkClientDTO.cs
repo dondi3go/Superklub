@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 #if UNITY_STANDALONE
 using UnityEngine;
+#else
+using System.Text.Json;
+using System.Text.Json.Serialization;
 #endif
 
 namespace Superklub
