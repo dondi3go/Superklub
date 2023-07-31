@@ -1,2 +1,2 @@
 # Superklub
-A supersynk client (synchronisation of distributed data) for 3D visualization
+A client of supersynk server used to exhange data for 3D visualization
