@@ -145,14 +145,14 @@ namespace Superklub
             switch (parameterName)
             {
                 case "pos":
-                    //try
+                    try
                     {
                         record.Position = ParseFloat3(parameterValue);
                     }
-                    /*catch (FormatException)
+                    catch (FormatException)
                     { 
                         return false; 
-                    }*/
+                    }
                     break;
                 case "rot":
                     try
