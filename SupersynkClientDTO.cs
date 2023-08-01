@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,39 +14,8 @@ using System.Text.Json.Serialization;
 namespace Superklub
 {
     /// <summary>
-    /// 
-    /// </summary>
-    [Serializable]
-    public class SupersynkPropertyDTO
-    {
-#if UNITY_STANDALONE
-        [SerializeField]
-#endif
-        private string key;
-#if !UNITY_STANDALONE
-        [JsonPropertyName("key")]
-#endif
-        public string Key { get { return key; } }
-
-#if UNITY_STANDALONE
-        [SerializeField]
-#endif
-        private string value;
-#if !UNITY_STANDALONE
-        [JsonPropertyName("value")]
-#endif
-        public string Value { get { return value; } }
-
-        public SupersynkPropertyDTO(string key, string value)
-        {
-            this.key = key;
-            this.value = value;
-        }
-    }
-
-    /// <summary>
-    /// Store data used for Supersynk Request, 
-    /// can be converted into JSON string
+    /// Store data used in Supersynk Requests, 
+    /// can be converted into Json string
     /// </summary>
     [Serializable]
     public class SupersynkClientDTO
@@ -55,27 +23,27 @@ namespace Superklub
 #if UNITY_STANDALONE
         [SerializeField]
 #endif
-        private string client_id = "";
+        private string client_id = string.Empty;
 #if !UNITY_STANDALONE
         [JsonPropertyName("client_id")]
 #endif
-        public string ClientId 
+        public string ClientId
         {
             get { return client_id; }
-            private set { client_id = value; } 
         }
 
 #if UNITY_STANDALONE
         [SerializeField]
 #endif
-        private List<SupersynkPropertyDTO> properties = new List<SupersynkPropertyDTO>();
+        private List<string> data = new List<string>();
 #if !UNITY_STANDALONE
-        [JsonPropertyName("properties")]
+        [JsonPropertyName("data")]
 #endif
-        public List<SupersynkPropertyDTO> Properties 
+        public List<string> Data
         {
-            get { return properties; }
-            set { properties = value; }
+            get { return data; }
+            // needed for deserialization
+            set { data = value; }
         }
 
         /// <summary>
@@ -83,21 +51,13 @@ namespace Superklub
         /// </summary>
         public SupersynkClientDTO(string clientId)
         {
-            ClientId = clientId;
+            client_id = clientId;
         }
 
         /// <summary>
         /// 
         /// </summary>
-        public void AddProperty(string propertyKey, string propertyValue)
-        {
-            Properties.Add(new SupersynkPropertyDTO(propertyKey, propertyValue));
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public string ToJSONString()
+        public string ToJsonString()
         {
 #if UNITY_STANDALONE
             return JsonUtility.ToJson(this);

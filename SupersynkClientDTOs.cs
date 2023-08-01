@@ -1,12 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 #if UNITY_STANDALONE
 using UnityEngine;
+
+public static class JsonHelper
+{
+    public static List<T> FromJsonArray<T>(string json)
+    {
+        json = "{\"Items\":" + json + "}";
+        Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>(json);
+        return wrapper.Items;
+    }
+
+    [Serializable]
+    private class Wrapper<T>
+    {
+        public List<T> Items;
+    }
+}
+
 #else
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -15,46 +32,38 @@ using System.Text.Json.Serialization;
 namespace Superklub
 {
     /// <summary>
-    /// 
+    /// Store data from Supersynk server response, 
+    /// is converted from Json string
     /// </summary>
     [Serializable]
-    public class SupersynkClientDTOs
+    public class SupersynkClientDTOs : List<SupersynkClientDTO>
     {
 #if UNITY_STANDALONE
-        [SerializeField]
-#endif
-        private List<SupersynkClientDTO> list = new List<SupersynkClientDTO>();
-#if !UNITY_STANDALONE
-        [JsonPropertyName("list")]
-#endif
-        public List<SupersynkClientDTO> List { 
-            get { return list; }
-            set { list = value; }
+        /// <summary>
+        /// Only because there is another constructor
+        /// </summary>
+        public SupersynkClientDTOs() { }
+
+        /// <summary>
+        /// Only used for Unity Json deserialization
+        /// </summary>
+        private SupersynkClientDTOs(List<SupersynkClientDTO> list)
+        {
+            AddRange(list);
         }
+#endif
 
         /// <summary>
         /// 
         /// </summary>
-        public void Add(SupersynkClientDTO dto)
+        public static SupersynkClientDTOs FromJsonString(string jsonString)
         {
-            list.Add(dto);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public void FromJSONString(string jsonString)
-        {
-            string adaptedJsonString = "{\"list\":" + jsonString + "}";
 #if UNITY_STANDALONE
-            var DTOs = JsonUtility.FromJson<SupersynkClientDTOs>(adaptedJsonString);
+            var list = JsonHelper.FromJsonArray<SupersynkClientDTO>(jsonString);
+            return new SupersynkClientDTOs(list);
 #else
-            var DTOs = JsonSerializer.Deserialize<SupersynkClientDTOs>(adaptedJsonString);
+            return JsonSerializer.Deserialize<SupersynkClientDTOs>(jsonString);
 #endif
-            if (DTOs != null)
-            {
-                this.list = DTOs.list;
-            }
         }
     }
 }

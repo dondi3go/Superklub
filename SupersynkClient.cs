@@ -55,10 +55,8 @@ namespace Superklub
 
             UpdateStatus(SupersynkClientStatus.CONNECTED);
 
-            // Convert JSON string into DTO
-            var clientDTOs = new SupersynkClientDTOs();
-            clientDTOs.FromJSONString(response.Text);
-            return clientDTOs;
+            // Convert JSON string into DTOs
+            return SupersynkClientDTOs.FromJsonString(response.Text);
         }
 
         /// <summary>
@@ -68,10 +66,10 @@ namespace Superklub
         public async Task<SupersynkClientDTOs> PostAsync(SupersynkClientDTO clientDTO)
         {
             // Convert DTO into JSON string
-            string jsonStringInput = clientDTO.ToJSONString();
+            string jsonString = clientDTO.ToJsonString();
             
             // Perform request
-            var response = await httpClient.PostAsync(jsonStringInput);
+            var response = await httpClient.PostAsync(jsonString);
             
             // Handle result
             if (response.Code == 0)
@@ -88,9 +86,7 @@ namespace Superklub
             UpdateStatus(SupersynkClientStatus.CONNECTED);
 
             // Convert JSON string into DTO
-            var clientDTOs = new SupersynkClientDTOs();
-            clientDTOs.FromJSONString(response.Text);
-            return clientDTOs;
+            return SupersynkClientDTOs.FromJsonString(response.Text);
         }
 
         /// <summary>

@@ -3,73 +3,74 @@
 namespace Superklub
 {
     /// <summary>
-    /// Takes two consecutive response from server and make a diff.
+    /// Takes two consecutive response from the server and make a diff.
     /// Provides :
     /// - clients connected / disconnected
     /// - nodes to create / update / delete in the scene graph
     /// </summary>
     public class SuperklubUpdate
     {
+        // Diff related to clients
         public List<string> newConnectedClients { get; private set; } = new List<string>();
         public List<string> disconnectedClients { get; private set; } = new List<string>();
 
+        // Diff related to nodes
         public List<SuperklubNodeRecord> nodesToCreate { get; private set; } = new List<SuperklubNodeRecord>();
         public List<SuperklubNodeRecord> nodesToUpdate { get; private set; } = new List<SuperklubNodeRecord>();
         public List<SuperklubNodeRecord> nodesToDelete { get; private set; } = new List<SuperklubNodeRecord>();
 
+        /// <summary>
+        /// 
+        /// </summary>
         public SuperklubUpdate(
             SupersynkClientDTOs oldDTOs,
             SupersynkClientDTOs newDTOs
             )
         {
-            if (newDTOs == null)
-            {
-                return;
-            }
+            // Compare clients in old and new list of SupersynkClientDTO
+            newConnectedClients = GetClientIdsInListAButNotInListB(newDTOs, oldDTOs);
+            disconnectedClients = GetClientIdsInListAButNotInListB(oldDTOs, newDTOs);
 
-            if (oldDTOs == null)
-            {
-                // All clients are new clients
-                foreach (var newDTO in newDTOs.List)
-                {
-                    newConnectedClients.Add(newDTO.ClientId);
-                }
+            // Extract Nodes from SupersynkClientDTO
+            List<SuperklubNodeRecord> oldNodes = ExtractNodes(oldDTOs);
+            List<SuperklubNodeRecord> newNodes = ExtractNodes(newDTOs);
 
-                // All nodes are nodes to create
-                nodesToCreate = ExtractNodes(newDTOs);
-            }
-            else
-            {
-                // Prepare clientIds for comparison
-                HashSet<string> oldClientIds = ToClientIdHashset(oldDTOs);
-                HashSet<string> newClientIds = ToClientIdHashset(newDTOs);
-
-                // Compare
-                newConnectedClients = GetClientIdsNotInHashset(newDTOs, oldClientIds);
-                disconnectedClients = GetClientIdsNotInHashset(oldDTOs, newClientIds);
-
-                // Extract Nodes from SupersynkClientDTO
-                List<SuperklubNodeRecord> oldNodes = ExtractNodes(oldDTOs);
-                List<SuperklubNodeRecord> newNodes = ExtractNodes(newDTOs);
-
-                // Prepare nodeIds for comparison
-                HashSet<string> oldNodeIds = ToNodeIdHashset(oldNodes);
-                HashSet<string> newNodeIds = ToNodeIdHashset(newNodes);
-
-                // Compare
-                nodesToCreate = GetNodesNotInHashset(newNodes, oldNodeIds);
-                nodesToDelete = GetNodesNotInHashset(oldNodes, newNodeIds);
-                nodesToUpdate = GetNodesInHashset(newNodes, oldNodeIds);
-            }
+            // Compare nodes in old and new list of nodes
+            nodesToCreate = GetNodesInListAButNotInListB(newNodes, oldNodes);
+            nodesToUpdate = GetNodesInListAButAlsoInListB(newNodes, oldNodes);
+            nodesToDelete = GetNodesInListAButNotInListB(oldNodes, newNodes);
         }
 
         /// <summary>
-        /// 
+        /// Get a list of client ids belonging to list A
+        /// but missing from list B
+        /// </summary>
+        public static List<string> GetClientIdsInListAButNotInListB(
+            SupersynkClientDTOs listA,
+            SupersynkClientDTOs listB
+            )
+        {
+            // Convert list B into a hashset of client Ids
+            var clientIdsInListB = ToClientIdHashset(listB);
+
+            List<string> clientIds = new List<string>();
+            foreach (var client in listA)
+            {
+                if (!clientIdsInListB.Contains(client.ClientId))
+                {
+                    clientIds.Add(client.ClientId);
+                }
+            }
+            return clientIds;
+        }
+
+        /// <summary>
+        /// Convert a list of SupersynkClientDTOs into a Hashset of client Ids
         /// </summary>
         public static HashSet<string> ToClientIdHashset(SupersynkClientDTOs clientPropertiesDTOs)
         {
             HashSet<string> clientIdsHashset = new HashSet<string>();
-            foreach (SupersynkClientDTO clientPropertiesDTO in clientPropertiesDTOs.List)
+            foreach (SupersynkClientDTO clientPropertiesDTO in clientPropertiesDTOs)
             {
                 clientIdsHashset.Add(clientPropertiesDTO.ClientId);
             }
@@ -77,38 +78,42 @@ namespace Superklub
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        public static List<string> GetClientIdsNotInHashset(
-            SupersynkClientDTOs clientPropertiesDTOs,
-            HashSet<string> clientIdsHashset)
-        { 
-            List<string> result = new List<string>();
-            foreach (SupersynkClientDTO client in clientPropertiesDTOs.List)
-            {
-                if (!clientIdsHashset.Contains(client.ClientId))
-                {
-                    result.Add(client.ClientId);
-                }
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 
+        /// Extract nodes of every client DTOs  
         /// </summary>
         public List<SuperklubNodeRecord> ExtractNodes(SupersynkClientDTOs DTOs)
         {
-            List< SuperklubNodeRecord> result = new List< SuperklubNodeRecord>();
-            foreach (SupersynkClientDTO DTO in DTOs.List)
+            List<SuperklubNodeRecord> nodes = new List< SuperklubNodeRecord>();
+            foreach (SupersynkClientDTO DTO in DTOs)
             {
-                result.AddRange(SuperklubNodeConverter.ConvertFromSupersynk(DTO));
+                nodes.AddRange(SuperklubNodeConverter.ConvertFromSupersynk(DTO));
             }
-            return result;
+            return nodes;
         }
 
         /// <summary>
-        /// 
+        /// Get the nodes belonging to list A
+        /// but missing from list B
+        /// </summary>
+        public static List<SuperklubNodeRecord> GetNodesInListAButNotInListB(
+            List<SuperklubNodeRecord> listA,
+            List<SuperklubNodeRecord> listB)
+        {
+            // Convert list B into a hashset of node Ids
+            HashSet<string> nodeIdsInListB = ToNodeIdHashset(listB);
+
+            List<SuperklubNodeRecord> nodes = new List<SuperklubNodeRecord>();
+            foreach (var node in listA)
+            {
+                if (!nodeIdsInListB.Contains(node.Id))
+                {
+                    nodes.Add(node);
+                }
+            }
+            return nodes;
+        }
+
+        /// <summary>
+        /// Convert a list of nodes into a Hashset of node Ids
         /// </summary>
         public static HashSet<string> ToNodeIdHashset(List<SuperklubNodeRecord> nodes)
         {
@@ -121,39 +126,25 @@ namespace Superklub
         }
 
         /// <summary>
-        /// 
+        /// Get the list of nodes belonging to list A and list B
         /// </summary>
-        public static List<SuperklubNodeRecord> GetNodesNotInHashset(
-            List<SuperklubNodeRecord> nodes,
-            HashSet<string> nodeIds)
+        public static List<SuperklubNodeRecord> GetNodesInListAButAlsoInListB(
+            List<SuperklubNodeRecord> listA,
+            List<SuperklubNodeRecord> listB
+            )
         {
-            List<SuperklubNodeRecord> result = new List<SuperklubNodeRecord>();
-            foreach (var node in nodes)
-            {
-                if (!nodeIds.Contains(node.Id))
-                {
-                    result.Add(node);
-                }
-            }
-            return result;
-        }
+            // Convert list B into a hashset of node Ids
+            HashSet<string> nodeIdsInListB = ToNodeIdHashset(listB);
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public static List<SuperklubNodeRecord> GetNodesInHashset(
-            List<SuperklubNodeRecord> nodes,
-            HashSet<string> nodeIds)
-        {
-            List<SuperklubNodeRecord> result = new List<SuperklubNodeRecord>();
-            foreach (var node in nodes)
+            List<SuperklubNodeRecord> nodes = new List<SuperklubNodeRecord>();
+            foreach (var node in listA)
             {
-                if (nodeIds.Contains(node.Id))
+                if (nodeIdsInListB.Contains(node.Id))
                 {
-                    result.Add(node);
+                    nodes.Add(node);
                 }
             }
-            return result;
+            return nodes;
         }
     }
 }

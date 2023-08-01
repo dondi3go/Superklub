@@ -5,37 +5,46 @@ using System.Text;
 
 namespace Superklub
 {
+    /// <summary>
+    /// A class dedicated to the creation of 
+    /// - Supersynk requests input (SupersynkClientDTO) from Superklub data
+    /// - Superklub data (SuperklubNodeRecord) from Supersynk requests output (SupersynkClientDTO)
+    /// </summary>
     public class SuperklubNodeConverter
     {
+        // Constants
+        private const string ID       = "id";
+        private const string POSITION = "pos";
+        private const string ROTATION = "rot";
+        private const string SHAPE    = "shape";
+        private const string COLOR    = "color";
+
         /// <summary>
-        /// A class dedicated to parsing from and to string
-        /// to convert between ISuperklubNode and Supersynk (json properties)
+        /// Create supersynk request input (SupersynkClientDTO) from Superklub data
         /// </summary>
         public static SupersynkClientDTO ConvertToSupersynk(string clientId, List<ISuperklubNode> nodes)
         {
             SupersynkClientDTO result = new SupersynkClientDTO(clientId);
             foreach (var node in nodes)
             {
-                string propertyValue = ConvertToString(node);
-                result.AddProperty(node.Id, propertyValue);
+                result.Data.Add(ConvertToString(node));
             }
             return result;
         }
 
         /// <summary>
-        /// 
+        /// Create Superklub data from supersynk request output
         /// </summary>
         public static List<SuperklubNodeRecord> ConvertFromSupersynk(SupersynkClientDTO dto)
         { 
             List<SuperklubNodeRecord> result = new List<SuperklubNodeRecord>();
 
-            foreach (var propertyDTO in dto.Properties)
+            foreach (var str in dto.Data)
             { 
                 SuperklubNodeRecord record = new SuperklubNodeRecord();
-                record.Id = dto.ClientId + ":" + propertyDTO.Key;
 
-                // Convert from string 'propertyDTO.Value'
-                var tokens = propertyDTO.Value.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                // Convert from string
+                var tokens = str.Split(';', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var token in tokens)
                 {
                     if (!ParseToken(token, record))
@@ -43,6 +52,7 @@ namespace Superklub
                         continue;
                     }
                 }
+                record.Id = dto.ClientId + ":" + record.Id;
                 result.Add(record);
             }
             
@@ -57,17 +67,19 @@ namespace Superklub
             string result = string.Empty;
             StringBuilder sb = new StringBuilder();
 
+            sb.Append(string.Concat(ID, "=", node.Id, ";"));
+
             var posAsString = StringFromFloat3(
                 node.Position.x, node.Position.y, node.Position.z);
-            sb.Append( string.Concat("pos=", posAsString, ";") );
+            sb.Append( string.Concat( POSITION, "=", posAsString, ";") );
 
             var rotAsString = StringFromFloat4(
                 node.Rotation.w, node.Rotation.x, node.Rotation.y, node.Rotation.z);
-            sb.Append(string.Concat("rot=", rotAsString, ";") );
+            sb.Append(string.Concat(ROTATION, "=", rotAsString, ";") );
 
-            sb.Append(string.Concat("shape=", node.Shape, ";"));
+            sb.Append(string.Concat(SHAPE, "=", node.Shape, ";"));
 
-            sb.Append(string.Concat("color=", node.Color));
+            sb.Append(string.Concat(COLOR, "=", node.Color));
 
             return sb.ToString();
         }
@@ -144,7 +156,10 @@ namespace Superklub
             string parameterValue = nameAndValue[1].Trim();
             switch (parameterName)
             {
-                case "pos":
+                case ID:
+                    record.Id = parameterValue;
+                    break;
+                case POSITION:
                     try
                     {
                         record.Position = ParseFloat3(parameterValue);
@@ -154,7 +169,7 @@ namespace Superklub
                         return false; 
                     }
                     break;
-                case "rot":
+                case ROTATION:
                     try
                     {
                         record.Rotation = ParseFloat4(parameterValue);
@@ -164,10 +179,10 @@ namespace Superklub
                         return false;
                     }
                     break;
-                case "shape":
+                case SHAPE:
                     record.Shape = parameterValue;
                     break;
-                case "color":
+                case COLOR:
                     record.Color = parameterValue;
                     break;
             }
@@ -176,7 +191,7 @@ namespace Superklub
         }
 
         /// <summary>
-        /// 
+        /// Raises 'FormatException' in case parsing cannot be done
         /// </summary>
         public static (float, float, float) ParseFloat3(string s)
         {
@@ -193,7 +208,7 @@ namespace Superklub
         }
 
         /// <summary>
-        /// 
+        /// Raises 'FormatException' in case parsing cannot be done
         /// </summary>
         public static (float, float, float, float) ParseFloat4(string s)
         {

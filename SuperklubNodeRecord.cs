@@ -3,7 +3,7 @@
 namespace Superklub
 {
     /// <summary>
-    /// A minmal implementation of ISuperklubNode
+    /// A minimal implementation of ISuperklubNode
     /// to store data received by server
     /// </summary>
     public class SuperklubNodeRecord : ISuperklubNode
