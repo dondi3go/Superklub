@@ -30,13 +30,13 @@ namespace Superklub
         /// Return HTTP code + HTTP response payload
         /// HTTP code is 0 if the server cannot be reached 
         /// </summary>
-        Task<HttpResponse> PostAsync(string jsonString);
+        Task<HttpResponse> PostAsync(string url, string jsonString);
 
         /// <summary>
         /// Performs an HTTP GET request
         /// Return HTTPCode + HTTP response payload
         /// HTTP code is 0 if the server cannot be reached
         /// </summary>
-        Task<HttpResponse> GetAsync();
+        Task<HttpResponse> GetAsync(string url);
     }
 }

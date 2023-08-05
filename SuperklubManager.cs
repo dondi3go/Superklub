@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace Superklub
 {
     /// <summary>
-    /// The class to use inorder to have synchronization 
+    /// The class to use in order to have synchronization 
     /// between 3D scenes for several distributed users
     /// </summary>
     public class SuperklubManager
@@ -17,6 +17,17 @@ namespace Superklub
 
         // Supersynk Client
         private SupersynkClient supersynkClient;
+
+        // Supersynk Server data
+        public string ServerUrl { get; set; } = "http://127.0.0.1:9999";
+        private string apiPath = "/api/channels/";
+        public string Channel { get; set; } = "test";
+
+        // url used for GET ans POST HTTP requests
+        public string requestUrl {
+            get { return ServerUrl + apiPath + Channel; }
+        }
+
 
         // Keep the previous response from the server
         SupersynkClientDTOs oldDistantData = new SupersynkClientDTOs();
@@ -51,12 +62,12 @@ namespace Superklub
             SupersynkClientDTOs newDistantData;
             if (localNodes.Count == 0)
             {
-                newDistantData = await supersynkClient.GetAsync();
+                newDistantData = await supersynkClient.GetAsync(requestUrl);
             }
             else
             {
                 var localData = SuperklubNodeConverter.ConvertToSupersynk(clientId, localNodes);
-                newDistantData = await supersynkClient.PostAsync(localData);
+                newDistantData = await supersynkClient.PostAsync(requestUrl, localData);
             }
 
             // Handle data from distant clients :

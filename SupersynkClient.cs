@@ -36,10 +36,10 @@ namespace Superklub
         /// <summary>
         /// Retrieve node data of distant clients from the server
         /// </summary>
-        public async Task<SupersynkClientDTOs> GetAsync()
+        public async Task<SupersynkClientDTOs> GetAsync(string url)
         {
             // Perform async request
-            var response = await httpClient.GetAsync();
+            var response = await httpClient.GetAsync(url);
 
             // Handle result
             if (response.Code == 0)
@@ -63,13 +63,13 @@ namespace Superklub
         /// Send local node data to the server
         /// Retreive nodes data of distant clients from the server 
         /// </summary>
-        public async Task<SupersynkClientDTOs> PostAsync(SupersynkClientDTO clientDTO)
+        public async Task<SupersynkClientDTOs> PostAsync(string url, SupersynkClientDTO clientDTO)
         {
             // Convert DTO into JSON string
             string jsonString = clientDTO.ToJsonString();
             
             // Perform request
-            var response = await httpClient.PostAsync(jsonString);
+            var response = await httpClient.PostAsync(url, jsonString);
             
             // Handle result
             if (response.Code == 0)
