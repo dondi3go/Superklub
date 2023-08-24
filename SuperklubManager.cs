@@ -19,7 +19,7 @@ namespace Superklub
         private SupersynkClient supersynkClient;
 
         // Supersynk Server data
-        public string ServerUrl { get; set; } = "http://127.0.0.1:9999";
+        public string ServerUrl { get; set; } = "http://127.0.0.1:5000";
         private string apiPath = "/api/channels/";
         public string Channel { get; set; } = "test";
 
@@ -28,6 +28,10 @@ namespace Superklub
             get { return ServerUrl + apiPath + Channel; }
         }
 
+        //
+        public string ClientId {
+            get { return clientId; }
+        }
 
         // Keep the previous response from the server
         SupersynkClientDTOs oldDistantData = new SupersynkClientDTOs();
@@ -39,8 +43,8 @@ namespace Superklub
         { 
             this.supersynkClient = supersynkClient;
 
-            // TODO
-            clientId = "ada";
+            // clientId is a GUID
+            clientId = Guid.NewGuid().ToString();
         }
 
         /// <summary>
