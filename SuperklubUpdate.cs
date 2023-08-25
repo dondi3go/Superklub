@@ -20,12 +20,18 @@ namespace Superklub
         public List<SuperklubNodeRecord> nodesToDelete { get; private set; } = new List<SuperklubNodeRecord>();
 
         /// <summary>
-        /// 
+        /// Use this constructor when no update is required
+        /// </summary>
+        public SuperklubUpdate()
+        {
+        }
+
+        /// <summary>
+        /// Use this constructor to detect differences between two requests on the server
         /// </summary>
         public SuperklubUpdate(
-            SupersynkClientDTOs oldDTOs,
-            SupersynkClientDTOs newDTOs
-            )
+        SupersynkClientDTOs oldDTOs,
+        SupersynkClientDTOs newDTOs)
         {
             // Compare clients in old and new list of SupersynkClientDTO
             newConnectedClients = GetClientIdsInListAButNotInListB(newDTOs, oldDTOs);

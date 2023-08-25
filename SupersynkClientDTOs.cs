@@ -56,7 +56,7 @@ namespace Superklub
         /// <summary>
         /// 
         /// </summary>
-        public static SupersynkClientDTOs FromJsonString(string jsonString)
+        public static SupersynkClientDTOs? FromJsonString(string jsonString)
         {
 #if UNITY_STANDALONE
             var list = JsonHelper.FromJsonArray<SupersynkClientDTO>(jsonString);

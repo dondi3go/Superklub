@@ -9,9 +9,6 @@ namespace Superklub
     /// </summary>
     public class SuperklubManager
     {
-        // Client Id should unique among clients
-        private string clientId;
-
         // Local nodes
         private List<ISuperklubNode> localNodes = new List<ISuperklubNode>();
 
@@ -23,17 +20,17 @@ namespace Superklub
         private string apiPath = "/api/channels/";
         public string Channel { get; set; } = "test";
 
-        // url used for GET ans POST HTTP requests
+        // Url used for GET ans POST HTTP requests
         public string requestUrl {
             get { return ServerUrl + apiPath + Channel; }
         }
 
-        //
+        // Should be unique among all clients connected to a channel
         public string ClientId {
-            get { return clientId; }
+            get { return supersynkClient.ClientId; }
         }
 
-        // Keep the previous response from the server
+        // Keep the previous response from the server to perform diff operation
         SupersynkClientDTOs oldDistantData = new SupersynkClientDTOs();
 
         /// <summary>
@@ -42,13 +39,11 @@ namespace Superklub
         public SuperklubManager(SupersynkClient supersynkClient)
         { 
             this.supersynkClient = supersynkClient;
-
-            // clientId is a GUID
-            clientId = Guid.NewGuid().ToString();
         }
 
         /// <summary>
         /// Call this method once for each local node at the begining of the session
+        /// This is applicable to clients behaving as participants in the channel 
         /// </summary>
         public void RegisterLocalNode(ISuperklubNode node)
         {
@@ -63,15 +58,22 @@ namespace Superklub
         public async Task<SuperklubUpdate> SynchronizeLocalAndDistantNodes()
         {
             // Perform request
-            SupersynkClientDTOs newDistantData;
+            SupersynkClientDTOs? newDistantData;
             if (localNodes.Count == 0)
             {
                 newDistantData = await supersynkClient.GetAsync(requestUrl);
             }
             else
             {
-                var localData = SuperklubNodeConverter.ConvertToSupersynk(clientId, localNodes);
+                var localData = SuperklubNodeConverter.ConvertToSupersynk(supersynkClient.ClientId, localNodes);
                 newDistantData = await supersynkClient.PostAsync(requestUrl, localData);
+            }
+
+            // Occurs in case of late requests or late responses
+            if (newDistantData == null)
+            {
+                // Nothing to update
+                return new SuperklubUpdate();
             }
 
             // Handle data from distant clients :

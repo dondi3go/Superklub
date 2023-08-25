@@ -124,7 +124,7 @@ namespace Superklub
         /// 
         /// Without it, serialization of floats could use '.' or ','
         /// </summary>
-        private static NumberFormatInfo numberFormatInfo = null;
+        private static NumberFormatInfo? numberFormatInfo = null;
         private static NumberFormatInfo GetNumberFormatInfo()
         {
             // Lazy instanciation of numberFormatInfo
