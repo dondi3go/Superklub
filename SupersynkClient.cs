@@ -21,23 +21,23 @@ namespace Superklub
     /// </summary>
     public class SupersynkClient
     {
-        // Dotnet implementation dependant HTTP Client
+        // .Net implementation dependant HTTP Client
         private IHttpClient httpClient;
 
         // Current client status relative to networking
         public SupersynkClientStatus Status { get; private set; } = SupersynkClientStatus.NOT_SET;
 
-        // clientId should unique among all clients connected to a channel
+        // clientId should be unique among all clients connected to a channel
         public string clientId = String.Empty;
 
-        // ClientId should unique among all clients connected to a channel
+        // ClientId should be unique among all clients connected to a channel
         public string ClientId
         {
             get { return clientId; }
         }
 
         // LATE REQUESTS / LATE RESPONSES MANAGEMENT
-        private bool HandleLateMessages = false;
+        public bool HandleLateMessages { private get; set; } = false;
 
         // LATE REQUESTS / LATE RESPONSES MANAGEMENT
         // Will be used to compute "Client-Time" header value
@@ -69,7 +69,7 @@ namespace Superklub
         public async Task<SupersynkClientDTOs?> GetAsync(string url)
         {
             // Perform async request
-            var response = await httpClient.GetAsync(
+            HttpResponse response = await httpClient.GetAsync(
                 url, 
                 CreateClientHeaders(),
                 CreateServerTimeHeader());
@@ -86,26 +86,14 @@ namespace Superklub
                 return new SupersynkClientDTOs();
             }
 
+            // Update client status
             UpdateStatus(SupersynkClientStatus.CONNECTED);
 
-            // HTTP code 204 means 'late request'
-            if (response.Code == 204)
+            // Check for late messages
+            if (IsMessageLate(response))
             {
                 return null;
             }
-
-            // Check server time header, it can be a 'late response'
-            double serverTime = ExtractServerTimeHeader(response.CustomHeaderValue);
-            if (serverTime > 0) // server == -1 when no server time set 
-            {
-                if (serverTime < latestServerTime)
-                {
-                    return null;
-                }
-            }
-
-            // Update previousServerTime
-            latestServerTime = serverTime;
 
             // Convert JSON string into DTOs
             return SupersynkClientDTOs.FromJsonString(response.Text);
@@ -121,7 +109,7 @@ namespace Superklub
             string jsonString = clientDTO.ToJsonString();
             
             // Perform request
-            var response = await httpClient.PostAsync(
+            HttpResponse response = await httpClient.PostAsync(
                 url,
                 jsonString,
                 CreateClientHeaders(),
@@ -139,22 +127,13 @@ namespace Superklub
                 return new SupersynkClientDTOs();
             }
 
+            // Update client status
             UpdateStatus(SupersynkClientStatus.CONNECTED);
 
-            // HTTP code 204 means 'late request'
-            if (response.Code == 204)
+            // Check for late messages
+            if (IsMessageLate(response))
             {
                 return null;
-            }
-
-            // Check server time header, it can be a 'late response'
-            double serverTime = ExtractServerTimeHeader(response.CustomHeaderValue);
-            if (serverTime > 0) // server == -1 when no server time set 
-            {
-                if (serverTime < latestServerTime)
-                {
-                    return null;
-                }
             }
 
             // Convert JSON string into DTO
@@ -200,13 +179,13 @@ namespace Superklub
         /// <summary>
         /// 
         /// </summary>
-        private readonly CustomResponseHeader serverTimeResponseHeader =
+        private static readonly CustomResponseHeader serverTimeHeader =
             new CustomResponseHeader(SERVER_TIME_HEADER);
         private CustomResponseHeader? CreateServerTimeHeader() 
         {
             if (HandleLateMessages)
             {
-                return serverTimeResponseHeader;
+                return serverTimeHeader;
             }
             return null;
         }
@@ -226,6 +205,38 @@ namespace Superklub
                 }
             }
             return -1f;
+        }
+
+        /// <summary>
+        /// Return true if reponse is late
+        /// </summary>
+        private bool IsMessageLate(HttpResponse response)
+        {
+            // If this class does not handle late messages at all
+            // then this method should always return false
+            if (!HandleLateMessages)
+            {
+                return false;
+            }
+
+            // If it is a 'late request' then the server has sent a 204 response
+            if (response.Code == 204)
+            {
+                return true;
+            }
+
+            // To check if it is a 'late response', server time (stored in a header)
+            // should be compared to server time of a previous received messages
+            double serverTime = ExtractServerTimeHeader(response.CustomHeaderValue);
+            if (serverTime < latestServerTime)
+            {
+                return true;
+            }
+
+            // Update latestServerTime
+            latestServerTime = serverTime;
+
+            return false;
         }
     }
 }
